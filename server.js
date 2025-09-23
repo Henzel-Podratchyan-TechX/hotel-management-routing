@@ -11,9 +11,9 @@ app.get("/", (req, res) => {
     res.json({ status: "ok" });
 });
 
-const guestRouter = require("./routes/guests");
-const roomRouter = require("./routes/rooms");
-const bookingRouter = require("./routes/bookings");
+const guestRouter = require("./routes/guests.routes");
+const roomRouter = require("./routes/rooms.routes");
+const bookingRouter = require("./routes/bookings.routes");
 
 app.use("/api/guests", guestRouter);
 app.use("/api/rooms", roomRouter);

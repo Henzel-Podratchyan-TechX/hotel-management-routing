@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
+const GuestRepository = require("../repositories/guests.repository");
+const Log = require("../utils/Logger");
+const repo = new GuestRepository();
 
-let guests = [];
-let idCounter = 1;
+const TAG = "gust-routes"
 
 /**
  * @swagger
@@ -20,8 +22,15 @@ let idCounter = 1;
  *               items:
  *                 $ref: '#/components/schemas/Guest'
  */
-router.get("/", (req, res) => {
-    res.json(guests);
+router.get("/", async (req, res) => {
+    try {
+        const guests = await repo.getAllGuests();
+        Log.i(TAG, guests);
+        res.json(guests);
+    } catch (err) {
+        Log.e(TAG, err.message);
+        res.status(500).json({error: "Failed to fetch guests"});
+    }
 });
 
 /**
@@ -54,10 +63,20 @@ router.get("/", (req, res) => {
  *                 error:
  *                   type: string
  */
-router.get("/:id", (req, res) => {
-    const guest = guests.find(g => g.id === parseInt(req.params.id));
-    if (!guest) return res.status(404).json({ error: "Guest not found" });
-    res.json(guest);
+router.get("/:id", async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const guest = await repo.getGuestById(id);
+
+        Log.d(TAG, guest)
+
+        if (!guest) return res.status(404).json({ error: "Guest not found" });
+
+        res.json(guest);
+    } catch (err) {
+        Log.e(TAG, err.message);
+        res.status(500).json({ error: "Failed to fetch guest" });
+    }
 });
 
 /**
@@ -89,15 +108,30 @@ router.get("/:id", (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/", (req, res) => {
-    const { first_name, last_name, email, phone, room_n, cleaned_at } = req.body;
-    if (!first_name || !last_name || !email) {
-        return res.status(400).json({ error: "Missing required fields" });
-    }
+router.post("/", async (req, res) => {
+    try {
+        const { first_name, last_name, email, phone, room_n, cleaned_at } = req.body;
 
-    const guest = { id: idCounter++, first_name, last_name, email, phone, room_n, cleaned_at };
-    guests.push(guest);
-    res.status(201).json(guest);
+        if (!first_name || !last_name || !email) {
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+
+        const newGuest = await repo.createGuest({
+            first_name,
+            last_name,
+            email,
+            phone,
+            room_n,
+            cleaned_at
+        });
+
+        Log.d(TAG, newGuest)
+
+        res.status(201).json(newGuest);
+    } catch (err) {
+        Log.e(TAG, err)
+        res.status(500).json({ error: "Failed to create guest" });
+    }
 });
 
 /**
@@ -136,12 +170,20 @@ router.post("/", (req, res) => {
  *                 error:
  *                   type: string
  */
-router.patch("/:id", (req, res) => {
-    const guest = guests.find(g => g.id === parseInt(req.params.id));
-    if (!guest) return res.status(404).json({ error: "Guest not found" });
+router.patch("/:id", async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const updatedGuest = await repo.updateGuest(id, req.body);
 
-    Object.assign(guest, req.body);
-    res.json(guest);
+        Log.d(TAG, updatedGuest)
+
+        if (!updatedGuest) return res.status(404).json({ error: "Guest not found" });
+
+        res.json(updatedGuest);
+    } catch (err) {
+        Log.e(TAG, err)
+        res.status(500).json({ error: "Failed to update guest" });
+    }
 });
 
 /**
@@ -170,12 +212,20 @@ router.patch("/:id", (req, res) => {
  *                 error:
  *                   type: string
  */
-router.delete("/:id", (req, res) => {
-    const index = guests.findIndex(g => g.id === parseInt(req.params.id));
-    if (index === -1) return res.status(404).json({ error: "Guest not found" });
+router.delete("/:id", async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const deleted = await repo.deleteGuest(id);
 
-    guests.splice(index, 1);
-    res.status(204).end();
+        Log.d(TAG, deleted)
+
+        if (!deleted) return res.status(404).json({ error: "Guest not found" });
+
+        res.status(204).end();
+    } catch (err) {
+        Log.e(TAG, err)
+        res.status(500).json({ error: "Failed to delete guest" });
+    }
 });
 
 /**

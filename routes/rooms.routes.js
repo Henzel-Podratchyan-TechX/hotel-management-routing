@@ -1,8 +1,11 @@
 const express = require("express");
 const router = express.Router();
+const RoomRepository = require("../repositories/rooms.repository");
+const { RoomStatus } = require("../models/room.model");
+const Log = require("../utils/Logger");
+const repo = new RoomRepository();
 
-let rooms = [];
-let idCounter = 1;
+const TAG = "room-routes"
 
 /**
  * @swagger
@@ -42,7 +45,16 @@ let idCounter = 1;
  *               items:
  *                 $ref: '#/components/schemas/Room'
  */
-router.get("/", (req, res) => res.json(rooms));
+router.get("/",  async (req, res) => {
+    try {
+        const rooms = await repo.getAllRooms();
+        Log.i(TAG, rooms);
+        res.json(rooms);
+    } catch (err) {
+        Log.e(TAG, err.message);
+        res.status(500).json({ error: "Failed to fetch rooms" });
+    }
+});
 
 /**
  * @swagger
@@ -74,10 +86,21 @@ router.get("/", (req, res) => res.json(rooms));
  *                 error:
  *                   type: string
  */
-router.get("/:id", (req, res) => {
-    const room = rooms.find(r => r.id === parseInt(req.params.id));
-    if (!room) return res.status(404).json({ error: "Room not found" });
-    res.json(room);
+router.get("/:id", async (req, res) => {
+    try {
+        const id = parseInt(req.params.id)
+        const room = await repo.getRoomById(id);
+
+        Log.d(TAG, room)
+
+        if (!room) {
+            return res.status(404).json({ error: "Room not found" })
+        }
+
+        res.json(room);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch room"})
+    }
 });
 
 /**
@@ -121,15 +144,26 @@ router.get("/:id", (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/", (req, res) => {
-    const { room_number, floor, status } = req.body;
-    if (!room_number || !floor || !status || !["available", "occupied", "maintenance"].includes(status)) {
-        return res.status(400).json({ error: "Invalid or missing fields" });
-    }
+router.post("/", async (req, res) => {
+    try {
+        const { room_number, floor, status} = req.body;
 
-    const room = { id: idCounter++, room_number, floor, status };
-    rooms.push(room);
-    res.status(201).json(room);
+        if (!room_number || !floor || !status) {
+            return res.status(400).json({ error : "Missing required fields"})
+        }
+
+        if (!Object.values(RoomStatus).includes(status)) {
+            return res.status(400).json({ error: "Invalid status"})
+        }
+
+        const newRoom = await repo.createRoom({ room_number, floor, status });
+
+        Log.d(TAG, newRoom)
+        res.status(200).json(newRoom);
+    } catch (err) {
+        Log.e(TAG, err)
+        res.status(500).json({ error: err.message || "Failed to create room" });
+    }
 });
 
 /**
@@ -185,16 +219,22 @@ router.post("/", (req, res) => {
  *                 error:
  *                   type: string
  */
-router.patch("/:id", (req, res) => {
-    const room = rooms.find(r => r.id === parseInt(req.params.id));
-    if (!room) return res.status(404).json({ error: "Room not found" });
+router.patch("/:id", async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const updatedRoom = await repo.updateRoom(id, req.body);
 
-    if (req.body.status && !["available", "occupied", "maintenance"].includes(req.body.status)) {
-        return res.status(400).json({ error: "Invalid status" });
+        if (!updatedRoom) {
+            return res.status(400).json({ error: "Room not found" });
+        }
+
+        Log.d(TAG, updatedRoom)
+
+        res.json(updatedRoom);
+    } catch (err) {
+        Log.e(TAG, err)
+        res.status(400).json({ error: err.message || "Failed to update room" });
     }
-
-    Object.assign(room, req.body);
-    res.json(room);
 });
 
 /**
@@ -223,12 +263,22 @@ router.patch("/:id", (req, res) => {
  *                 error:
  *                   type: string
  */
-router.delete("/:id", (req, res) => {
-    const index = rooms.findIndex(r => r.id === parseInt(req.params.id));
-    if (index === -1) return res.status(404).json({ error: "Room not found" });
+router.delete("/:id", async (req, res) => {
+   try {
+       const id = parseInt(req.params.id);
+       const deleted = await repo.deleteRoom(id);
 
-    rooms.splice(index, 1);
-    res.status(204).end();
+       if (!deleted) {
+           return res.status(400).json({ error: "Room not found" })
+       }
+
+       Log.d(TAG, deleted)
+
+       res.status(204).end()
+   } catch (err) {
+       Log.e(TAG, err)
+       res.status(500).json({ error: "Failed to delete room" })
+   }
 });
 
 module.exports = router;
