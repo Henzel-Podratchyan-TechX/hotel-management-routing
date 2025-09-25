@@ -1,6 +1,9 @@
 const fs = require("fs").promises;
 const path = require("path");
 const { Booking } = require("../models/booking.model");
+const Log = require("../utils/Logger");
+
+const TAG = "BookingRepository";
 
 const filePath = path.join(__dirname, "./data.local/bookings.json");
 
@@ -28,12 +31,16 @@ class BookingRepository {
     }
 
     async getAllBookings() {
-        return this._readFile();
+        const data = await this._readFile();
+        Log.d(TAG,  data)
+        return data
     }
 
     async getBookingById(id) {
         const bookings = await this._readFile();
-        return bookings.find(b => b.id === id) || null;
+        const booking = bookings.find(b => b.id === Number(id)) || null;
+        Log.d(TAG, booking);
+        return booking;
     }
 
     async createBooking(bookingData) {
@@ -53,6 +60,8 @@ class BookingRepository {
             bookingData.status
         );
 
+        Log.d(TAG, newBooking);
+
         bookings.push(newBooking);
         await this._writeFile(bookings);
 
@@ -61,7 +70,7 @@ class BookingRepository {
 
     async updateBooking(id, updatedData) {
         const bookings = await this._readFile();
-        const index = bookings.findIndex(b => b.id === id);
+        const index = bookings.findIndex(b => b.id === Number(id));
 
         if (index === -1) return null;
 
@@ -75,6 +84,8 @@ class BookingRepository {
             updatedData.status ?? bookings[index].status
         );
 
+        Log.d(TAG, bookings[index]);
+
         await this._writeFile(bookings);
 
         return bookings[index];
@@ -86,6 +97,8 @@ class BookingRepository {
 
         if (index === -1) return false;
 
+        Log.d(TAG, bookings[index]);
+
         bookings.splice(index, 1);
         await this._writeFile(bookings);
 
@@ -93,4 +106,4 @@ class BookingRepository {
     }
 }
 
-module.exports = BookingRepository;
+module.exports = new BookingRepository();

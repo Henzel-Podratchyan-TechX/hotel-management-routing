@@ -16,6 +16,10 @@ class Guest {
         this.room_n = room_n;
         this.cleaned_at = cleaned_at;
     }
+
+    toString() {
+        return JSON.stringify(this);
+    }
 }
 
 module.exports = Guest;

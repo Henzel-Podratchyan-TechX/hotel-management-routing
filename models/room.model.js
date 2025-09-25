@@ -10,6 +10,10 @@ class Room {
         this.floor = floor;
         this.status = status;
     }
+
+    toString() {
+        return JSON.stringify(this);
+    }
 }
 
 class RoomStatus {

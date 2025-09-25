@@ -31,7 +31,7 @@ class GuestRepository {
 
     async getGuestById(id) {
         const data = await this._readFile();
-        return data.guests.find(g => g.id === id) || null;
+        return data.guests.find(g => g.id === Number(id)) || null;
     }
 
     async createGuest(guestData) {
@@ -67,7 +67,7 @@ class GuestRepository {
 
     async updateGuest(id, updatedData) {
         const data = await this._readFile();
-        const index = data.guests.findIndex(g => g.id === id);
+        const index = data.guests.findIndex(g => g.id === Number(id));
 
         if (index === -1) return null;
 
@@ -103,4 +103,4 @@ class GuestRepository {
     }
 }
 
-module.exports = GuestRepository;
+module.exports = new GuestRepository();

@@ -1,10 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const GuestRepository = require("../repositories/guests.repository");
-const Log = require("../utils/Logger");
-const repo = new GuestRepository();
-
-const TAG = "gust-routes"
+const guestsController = require('../controllers/guests.controller');
+const { validateGuest } = require('../middleware/validations/guests.validation');
 
 /**
  * @swagger
@@ -22,16 +19,7 @@ const TAG = "gust-routes"
  *               items:
  *                 $ref: '#/components/schemas/Guest'
  */
-router.get("/", async (req, res) => {
-    try {
-        const guests = await repo.getAllGuests();
-        Log.i(TAG, guests);
-        res.json(guests);
-    } catch (err) {
-        Log.e(TAG, err.message);
-        res.status(500).json({error: "Failed to fetch guests"});
-    }
-});
+router.get("/", guestsController.getAll);
 
 /**
  * @swagger
@@ -63,21 +51,7 @@ router.get("/", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.get("/:id", async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        const guest = await repo.getGuestById(id);
-
-        Log.d(TAG, guest)
-
-        if (!guest) return res.status(404).json({ error: "Guest not found" });
-
-        res.json(guest);
-    } catch (err) {
-        Log.e(TAG, err.message);
-        res.status(500).json({ error: "Failed to fetch guest" });
-    }
-});
+router.get("/:id", guestsController.getOne);
 
 /**
  * @swagger
@@ -108,31 +82,7 @@ router.get("/:id", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/", async (req, res) => {
-    try {
-        const { first_name, last_name, email, phone, room_n, cleaned_at } = req.body;
-
-        if (!first_name || !last_name || !email) {
-            return res.status(400).json({ error: "Missing required fields" });
-        }
-
-        const newGuest = await repo.createGuest({
-            first_name,
-            last_name,
-            email,
-            phone,
-            room_n,
-            cleaned_at
-        });
-
-        Log.d(TAG, newGuest)
-
-        res.status(201).json(newGuest);
-    } catch (err) {
-        Log.e(TAG, err)
-        res.status(500).json({ error: "Failed to create guest" });
-    }
-});
+router.post("/", validateGuest, guestsController.create);
 
 /**
  * @swagger
@@ -170,21 +120,7 @@ router.post("/", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.patch("/:id", async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        const updatedGuest = await repo.updateGuest(id, req.body);
-
-        Log.d(TAG, updatedGuest)
-
-        if (!updatedGuest) return res.status(404).json({ error: "Guest not found" });
-
-        res.json(updatedGuest);
-    } catch (err) {
-        Log.e(TAG, err)
-        res.status(500).json({ error: "Failed to update guest" });
-    }
-});
+router.patch("/:id", validateGuest, guestsController.update);
 
 /**
  * @swagger
@@ -212,21 +148,7 @@ router.patch("/:id", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.delete("/:id", async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        const deleted = await repo.deleteGuest(id);
-
-        Log.d(TAG, deleted)
-
-        if (!deleted) return res.status(404).json({ error: "Guest not found" });
-
-        res.status(204).end();
-    } catch (err) {
-        Log.e(TAG, err)
-        res.status(500).json({ error: "Failed to delete guest" });
-    }
-});
+router.delete("/:id", guestsController.delete);
 
 /**
  * @swagger

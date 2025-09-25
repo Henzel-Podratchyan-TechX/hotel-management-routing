@@ -1,10 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const BookingRepository = require("../repositories/bookings.repository");
-const Log = require("../utils/Logger");
-const repo = new BookingRepository();
-
-const TAG = "Booking"
+const bookingsController = require('../controllers/bookings.controller');
+const { validateBooking } = require('../middleware/validations/bookings.validation');
 
 /**
  * @swagger
@@ -54,16 +51,7 @@ const TAG = "Booking"
  *               items:
  *                 $ref: '#/components/schemas/Booking'
  */
-router.get("/", async (req, res) => {
-    try {
-        const bookings = await repo.getAllBookings();
-        Log.d(TAG, bookings)
-        res.json(bookings);
-    } catch (err) {
-        Log.e(TAG, err)
-        res.status(500).json({ error: "Failed to fetch bookings" });
-    }
-});
+router.get("/", bookingsController.getAll);
 
 /**
  * @swagger
@@ -95,21 +83,7 @@ router.get("/", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.get("/:id", async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        const booking = await repo.getBookingById(id);
-
-        Log.d(TAG, booking)
-
-        if (!booking) return res.status(404).json({ error: "Booking not found" });
-
-        res.json(booking);
-    } catch (err) {
-        Log.e(TAG, err)
-        res.status(500).json({ error: "Failed to fetch booking" });
-    }
-});
+router.get("/:id", bookingsController.getOne);
 
 /**
  * @swagger
@@ -162,31 +136,7 @@ router.get("/:id", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/", async (req, res) => {
-    try {
-        const { guest_id, room_id, check_in_date, check_out_date, num_guests, status } = req.body;
-
-        if (!guest_id || !room_id || !check_in_date || !check_out_date || !num_guests || !status) {
-            return res.status(400).json({ error: "Missing required fields" });
-        }
-
-        const newBooking = await repo.createBooking({
-            guest_id,
-            room_id,
-            check_in_date,
-            check_out_date,
-            num_guests,
-            status
-        });
-
-        Log.d(TAG, newBooking)
-
-        res.status(201).json(newBooking);
-    } catch (err) {
-        Log.e(TAG, err)
-        res.status(500).json({ error: "Failed to create booking" });
-    }
-});
+router.post("/", validateBooking, bookingsController.create);
 
 
 /**
@@ -240,21 +190,7 @@ router.post("/", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.patch("/:id", async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        const updatedBooking = await repo.updateBooking(id, req.body);
-
-        Log.d(TAG, updatedBooking)
-
-        if (!updatedBooking) return res.status(404).json({ error: "Booking not found" });
-
-        res.json(updatedBooking);
-    } catch (err) {
-        Log.e(TAG, err)
-        res.status(500).json({ error: "Failed to update booking" });
-    }
-});
+router.patch("/:id", validateBooking, bookingsController.update);
 
 
 /**
@@ -283,21 +219,6 @@ router.patch("/:id", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.delete("/:id", async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        const deleted = await repo.deleteBooking(id);
-
-        Log.d(TAG, deleted)
-
-        if (!deleted) return res.status(404).json({ error: "Booking not found" });
-
-        res.status(204).end();
-    } catch (err) {
-        Log.e(TAG, err)
-        res.status(500).json({ error: "Failed to delete booking" });
-    }
-});
-
+router.delete("/:id", bookingsController.delete);
 
 module.exports = router;

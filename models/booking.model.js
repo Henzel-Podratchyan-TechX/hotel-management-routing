@@ -16,6 +16,10 @@ class Booking {
         this.num_guests = num_guests;
         this.status = status
     }
+
+    toString() {
+        return JSON.stringify(this);
+    }
 }
 
 class BookingStatus {
