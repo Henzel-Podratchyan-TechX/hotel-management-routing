@@ -1,6 +1,9 @@
 const fs = require("fs").promises;
 const path = require("path");
 const { Room, RoomStatus } = require("../models/room.model");
+const Log = require("../utils/Logger");
+
+const TAG = "RoomRepository";
 
 const filePath = path.join(__dirname, "data.local/rooms.json");
 
@@ -22,12 +25,16 @@ class RoomRepository {
     }
 
     async getAllRooms() {
-        return this._readFile();
+        const data = this._readFile();
+        Log.d(TAG, data);
+        return data;
     }
 
     async getRoomById(id) {
         const rooms = await this._readFile();
-        return rooms.find(r => r.id === id) || null;
+        const room = rooms.find(r => r.id === Number(id)) || null;
+        Log.d(TAG, room);
+        return room;
     }
 
     async createRoom(roomData) {
@@ -35,11 +42,13 @@ class RoomRepository {
 
         const newId = rooms.length ? Math.max(...rooms.map(r => r.id)) + 1 : 1;
 
-        if (!Object.values(RoomStatus).includes(roomData.status)) {
-            throw new Error("Invalid room status");
-        }
+        const newRoom = new Room(newId,
+            roomData.room_number,
+            roomData.floor,
+            roomData.status
+        );
 
-        const newRoom = new Room(newId, roomData.room_number, roomData.floor, roomData.status);
+        Log.d(TAG, newRoom);
 
         rooms.push(newRoom);
         await this._writeFile(rooms);
@@ -49,13 +58,9 @@ class RoomRepository {
 
     async updateRoom(id, updatedData) {
         const rooms = await this._readFile();
-        const index = rooms.findIndex(r => r.id === id);
+        const index = rooms.findIndex(r => r.id === Number(id));
 
         if (index === -1) return null;
-
-        if (updatedData.status && !Object.values(RoomStatus).includes(updatedData.status)) {
-            throw new Error("Invalid room status");
-        }
 
         rooms[index] = new Room(
             id,
@@ -63,6 +68,8 @@ class RoomRepository {
             updatedData.floor ?? rooms[index].floor,
             updatedData.status ?? rooms[index].status
         );
+
+        Log.d(TAG, rooms[index]);
 
         await this._writeFile(rooms);
         return rooms[index];
@@ -74,10 +81,13 @@ class RoomRepository {
 
         if (index === -1) return false;
 
+        Log.d(TAG, rooms[index]);
+
         rooms.splice(index, 1);
         await this._writeFile(rooms);
+
         return true;
     }
 }
 
-module.exports = RoomRepository;
+module.exports = new RoomRepository();

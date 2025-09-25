@@ -1,6 +1,5 @@
 const bookingsRepository = require("../repositories/bookings.repository");
 const createHttpError = require("../utils/http-errors");
-const {Booking} = require("../models/booking.model");
 
 class BookingService {
     async getAllBookings() {
@@ -9,7 +8,7 @@ class BookingService {
 
     async getBookingById(id) {
         const booking = await bookingsRepository.getBookingById(id);
-        if (!Booking) throw createHttpError(404, "Booking not found");
+        if (!booking) throw createHttpError(404, "Booking not found");
         return booking;
     }
 

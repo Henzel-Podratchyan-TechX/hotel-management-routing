@@ -33,7 +33,7 @@ class BookingRepository {
     async getAllBookings() {
         const data = await this._readFile();
         Log.d(TAG,  data)
-        return data
+        return data;
     }
 
     async getBookingById(id) {
@@ -46,9 +46,7 @@ class BookingRepository {
     async createBooking(bookingData) {
         const bookings = await this._readFile();
 
-        const newId = bookings.length
-            ? Math.max(...bookings.map(b => b.id)) + 1
-            : 1;
+        const newId = bookings.length ? Math.max(...bookings.map(b => b.id)) + 1 : 1;
 
         const newBooking = new Booking(
             newId,
@@ -87,7 +85,6 @@ class BookingRepository {
         Log.d(TAG, bookings[index]);
 
         await this._writeFile(bookings);
-
         return bookings[index];
     }
 
