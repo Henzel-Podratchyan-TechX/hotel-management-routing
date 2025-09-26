@@ -14,8 +14,7 @@ class BookingService {
 
     async createBooking(data) {
         if (
-            !data.guest_id
-            || !data.room_id
+            !data.room_id
             || !data.check_in_date
             || !data.check_out_date
             || !data.num_guests

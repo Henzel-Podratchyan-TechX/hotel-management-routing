@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:15
+    container_name: hotel_management_container
+    environment:
+      POSTGRES_USER: henzel
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: hotel_management_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./src
+    container_name: hotel_management_backend
+    environment:
+      DB_HOST: db
+      DB_USER: henzel
+      DB_PASSWORD: 1234
+      DB_NAME: hotel_management_db
+      DB_PORT: 5432
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    command: ["npm", "start"]
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: hotel_management_db_admin_page
+    environment:
+      PGADMIN_DEFAULT_EMAIL: podratchyanhenzel@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: verylongpasswordthatcontains123456789!@#$%^&*
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  postgres_data:
+  pgadmin_data:
